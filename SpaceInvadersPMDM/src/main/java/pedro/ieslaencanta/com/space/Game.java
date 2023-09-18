@@ -34,6 +34,8 @@ public class Game {
 
     private Wall[] walls;
 
+    private Enemy[] enemies;
+
     private boolean key_left_pressed;
     private boolean key_right_pressed;
     private boolean key_exit;
@@ -71,7 +73,14 @@ public class Game {
         this.state = STATES.PLAY;
         this.ship = new Ship(40, 20);
         this.walls = new Wall[4];
-        this.walls[0] = new Wall(COLUMNS/2, ROWS/2);
+        this.enemies = new Enemy[1];
+
+        this.walls[0] = new Wall(7+1, 16);
+        this.walls[1] = new Wall(28+1, 16);
+        this.walls[2] = new Wall(49+1, 16);
+        this.walls[3] = new Wall(70+1, 16);
+
+        this.enemies[0] = new Enemy(COLUMNS/2, ROWS/2);
     }
 
     /**
@@ -122,7 +131,10 @@ public class Game {
             }
             if (this.state == STATES.PLAY) {
               this.ship.paint(s);
-              this.walls[0].paint(s);
+
+              for(Wall i : this.walls){
+                  i.paint(s);
+              }
             } else if (this.state == STATES.GAME_OVER) {
                 this.paintGameOver(s);
             }
@@ -212,6 +224,18 @@ public class Game {
 
     }
 
+    private void wallCollision(){
+        Bullet[] shipBullets = this.ship.getBullets();
+
+        for(Wall i : this.walls){
+            for(int j = 0; j < shipBullets.length; j++){
+                if(i.colision(shipBullets[j])){
+                    this.ship.getBullets()[j] = null;
+                }
+            }
+        }
+    }
+
     private void update() {
         if (this.state == STATES.PLAY) {
             //mover la nave
@@ -223,6 +247,9 @@ public class Game {
             }
             //se mueven las balas de la nave
             this.ship.moveBullets(0, ROWS);
+
+            //se detectan las colisiones con los muros
+            this.wallCollision();
 
             //se dispara si se ha pulsado la tecla
             if (this.key_shoot) {
