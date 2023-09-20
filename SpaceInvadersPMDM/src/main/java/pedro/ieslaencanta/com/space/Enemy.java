@@ -27,15 +27,15 @@ public class Enemy {
     private int paint_counter = 0;
     private int animation = 250;
     private boolean animate = false;
+    //Probabilidad de disparar
     private float prob;
     private static char bullet_symbol = com.googlecode.lanterna.Symbols.ARROW_DOWN;
-    private static int NUM_HORIZONTAL_MOVE=5;
     public enum HORIZONTAL_DIRECTION{
         LEFT,
         RIGHT
     }
-    private int horizontal_counter;
     private HORIZONTAL_DIRECTION direction;
+    private static int velocidad;
     private EnemyType enemytype;
     private TextCharacter bulletsymbol;
 
@@ -89,7 +89,8 @@ public class Enemy {
     public Enemy() {
         this.position = new Point2D();
         this.prob = (float) Math.random() / 10000f;
-        this.horizontal_counter=0;
+        this.enemytype = EnemyType.A;
+        this.init();
     }
     /**
      * constructor sobreecargado
@@ -99,10 +100,10 @@ public class Enemy {
     public Enemy(Point2D p) {
         this.position = p;
         this.prob = (float) Math.random() / 10000f;
-        this.horizontal_counter=0;
+        this.enemytype = EnemyType.A;
+        this.init();
     }
     public void setHorizontaDirection(HORIZONTAL_DIRECTION direction){
-        this.horizontal_counter=0;
         this.direction=direction;
     }
     /**
@@ -113,7 +114,20 @@ public class Enemy {
     public Enemy(int x, int y) {
         this.position = new Point2D(x, y);
         this.prob = (float) (Math.random() / 10000f);
-        this.horizontal_counter=0;
+        this.enemytype = EnemyType.A;
+        this.init();
+    }
+
+    /**
+     * @param x Posicion en eje X
+     * @param y Posicion en eje Y
+     * @param enemyType Tipo de enemigo
+     */
+    public Enemy(int x, int y, EnemyType enemyType){
+        this.position = new Point2D(x, y);
+        this.prob = (float) (Math.random() / 10000f);
+        this.enemytype = enemyType;
+        this.init();
     }
     /**
      * inicializar la animación para que no todos se muevan igual
@@ -150,7 +164,6 @@ public class Enemy {
      * Inicialización del objeto
      */
     public void init() {
-
         if (null != this.enemytype) {
             switch (this.enemytype) {
                 case A:
@@ -193,22 +206,19 @@ public class Enemy {
     /**
      * mueve el elemnto en el eje x
      *
-     * @param intx incremento o decremento
      * @param min_x límite izquierdo
      * @param max_x límite derecho
      */
-    public void moveHorizontal(int min_x, int max_x) {
-        int incx=this.direction==HORIZONTAL_DIRECTION.LEFT?-1:1;
-        this.horizontal_counter++;
-        if(this.horizontal_counter==Enemy.NUM_HORIZONTAL_MOVE){
-            this.horizontal_counter=0;
-            this.direction=this.direction==HORIZONTAL_DIRECTION.LEFT?HORIZONTAL_DIRECTION.RIGHT:HORIZONTAL_DIRECTION.LEFT;
-        }
-        //if (this.position.getX() -1 - Enemy.cartoon[0].length / 2 >= min_x && this.position.getX() + 1 + Enemy.cartoon[0].length / 2 < max_x) {
+    public void moveHorizontal(int min_x, int max_x, int max_y) {
+        int incx = this.direction == HORIZONTAL_DIRECTION.LEFT?-1:1;
+
+        if (this.position.getX() >= min_x && this.position.getX() + 1 + Enemy.cartoon[this.getEnemyCartoon()][0].length() < max_x) {
             this.position.addX(incx);
-        //} else {
-        //   this.position.addX(-incx);
-       // }
+        } else {
+           this.direction=this.direction==HORIZONTAL_DIRECTION.LEFT?HORIZONTAL_DIRECTION.RIGHT:HORIZONTAL_DIRECTION.LEFT;
+           this.position.addX(-incx);
+           this.moveVertical(1, 0, max_y);
+        }
     }
 
     /**
@@ -281,11 +291,11 @@ public class Enemy {
 
         }
         enemy_index = this.getEnemyCartoon();
-        for (int i = 0; i < this.cartoon[enemy_index].length; i++) {
-            for (int j = 0; j < this.cartoon[enemy_index][i].length(); j++) {
+        for (int i = 0; i < cartoon[enemy_index].length; i++) {
+            for (int j = 0; j < cartoon[enemy_index][i].length(); j++) {
                 s.setCharacter(this.position.getX() + j,
                         this.position.getY() + i,
-                        new TextCharacter(this.cartoon[enemy_index][i].charAt(j),
+                        new TextCharacter(cartoon[enemy_index][i].charAt(j),
                                 color, this.backgroundcolor));
             }
         }
@@ -337,4 +347,15 @@ public class Enemy {
         return false;
     }
 
+    public static int getVelocidad(){
+        return velocidad;
+    }
+
+    /**
+     * Establece la velocidad lateral de los enemigos. Cuanto menor sea el valor más rapido se moveran
+     * @param vel
+     */
+    public static void setVelocidad(int vel){
+        velocidad = vel;
+    }
 }

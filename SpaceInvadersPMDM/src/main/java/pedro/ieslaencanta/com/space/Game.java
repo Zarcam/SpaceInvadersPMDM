@@ -12,7 +12,9 @@ import com.googlecode.lanterna.screen.TerminalScreen;
 import com.googlecode.lanterna.terminal.DefaultTerminalFactory;
 import com.googlecode.lanterna.terminal.Terminal;
 import java.awt.Toolkit;
+import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -22,19 +24,19 @@ import java.util.logging.Logger;
  * @author Pedro
  */
 public class Game {
-
     //dimensiones de un terminal
     private static int COLUMNS = 80;
     private static int ROWS = 24;
     public static final  TextColor BACKGROUND = TextColor.RGB.Factory.fromString("#000000");
     //20 MHz
     private static int frecuency = 2;
+    private int tick;
     private Terminal terminal;
     private Screen screen;
 
     private Wall[] walls;
 
-    private Enemy[] enemies;
+    private ArrayList<Enemy> enemies;
 
     private boolean key_left_pressed;
     private boolean key_right_pressed;
@@ -57,6 +59,7 @@ public class Game {
         this.key_right_pressed = false;
         this.key_exit = false;
         this.key_shoot = false;
+        this.tick = 0;
 
         this.init();
         try {
@@ -73,14 +76,19 @@ public class Game {
         this.state = STATES.PLAY;
         this.ship = new Ship(40, 20);
         this.walls = new Wall[4];
-        this.enemies = new Enemy[1];
+        this.enemies = new ArrayList<>();
+        Enemy.setVelocidad(500);
 
+        this.initWalls();
+
+        this.enemies.add(new Enemy(COLUMNS/2, 1, Enemy.EnemyType.C));
+    }
+
+    private void initWalls(){
         this.walls[0] = new Wall(7+1, 16);
         this.walls[1] = new Wall(28+1, 16);
         this.walls[2] = new Wall(49+1, 16);
         this.walls[3] = new Wall(70+1, 16);
-
-        this.enemies[0] = new Enemy(COLUMNS/2, ROWS/2);
     }
 
     /**
@@ -131,6 +139,10 @@ public class Game {
             }
             if (this.state == STATES.PLAY) {
               this.ship.paint(s);
+
+              for(Enemy i : this.enemies){
+                  i.paint(s);
+              }
 
               for(Wall i : this.walls){
                   i.paint(s);
@@ -228,9 +240,20 @@ public class Game {
         Bullet[] shipBullets = this.ship.getBullets();
 
         for(Wall i : this.walls){
+            //Balas nave
             for(int j = 0; j < shipBullets.length; j++){
                 if(i.colision(shipBullets[j])){
                     this.ship.getBullets()[j] = null;
+                }
+            }
+
+            //Balas enemigos
+            for(Enemy j : this.enemies){
+                Bullet[] enemyBullets = j.getBullets();
+                for(int k = 0; k < enemyBullets.length; k++){
+                    if(i.colision(enemyBullets[k])){
+                        j.getBullets()[k] = null;
+                    }
                 }
             }
         }
@@ -255,8 +278,26 @@ public class Game {
             if (this.key_shoot) {
                this.ship.shoot();
             }
-            //evaluar las colisiones
-           
+
+            //Disparo de enemigos
+            for(Enemy i : this.enemies){
+                i.shoot();
+            }
+
+            //Movimiento balas enemigos
+            for(Enemy i : this.enemies){
+                i.moveBullets(0, ROWS);
+            }
+
+            //movimiento enemigos
+            if(this.tick >= Enemy.getVelocidad()) {
+                for (Enemy i : this.enemies) {
+                    i.moveHorizontal(0, COLUMNS, ROWS);
+                }
+                this.tick = 0;
+            }
+
+            this.tick++;
         }
     }
 
